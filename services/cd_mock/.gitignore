@@ -9,3 +9,6 @@ hs_err_pid*
 .idea
 .db
 *.log
+target/
+*.iml
+.idea/
