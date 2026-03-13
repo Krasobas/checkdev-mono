@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>ru.checkdev</groupId>
+    <artifactId>checkdev-parent</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>services/cd_eureka</module>
+        <module>services/cd_auth</module>
+        <module>services/cd_desc</module>
+        <module>services/cd_generator</module>
+        <module>services/cd_mock</module>
+        <module>services/cd_notification</module>
+        <module>services/cd_site</module>
+    </modules>
+</project>
