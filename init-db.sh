@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+for db in cd_auth cd_desc cd_mock cd_notification cd_generator; do
+ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
+   SELECT 'CREATE DATABASE $db' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$db')\gexec
+EOSQL
+done
