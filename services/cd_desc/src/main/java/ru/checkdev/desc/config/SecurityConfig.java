@@ -23,6 +23,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     public void configure(WebSecurity web) {
         web.ignoring().antMatchers(
                 HttpMethod.GET,
+            "/actuator/health",
                 "/categories/**",
                 "/category/**",
                 "/topics/**",
