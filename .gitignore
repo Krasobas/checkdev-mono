@@ -20,3 +20,4 @@ docker-compose.override.yml
 # Env
 .env
 *.log
+k8s/01-secrets.yaml

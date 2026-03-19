@@ -200,7 +200,117 @@ CI/CD пайплайн доступен на порту `8090`. Конфигур
 | `EUREKA_CLIENT_SERVICEURL_DEFAULTZONE` | URL Eureka Server | `http://eureka:8761/eureka` |
 | `SPRING_KAFKA_BOOTSTRAP_SERVERS` | Kafka bootstrap | `broker:9092` |
 
-## Git Flow
+# Запуск CheckDev в Kubernetes (minikube)
+
+## Требования
+
+- [Docker](https://www.docker.com/products/docker-desktop/) 27+
+- [minikube](https://minikube.sigs.k8s.io/docs/start/) 1.35+
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) 1.32+
+- `make` (встроен в Linux/macOS, для Windows: `choco install make`)
+- Минимум 4GB свободной RAM и 4 CPU ядра
+
+## Быстрый старт
+
+```bash
+# 1. Запустить minikube
+minikube start --cpus=4 --memory=4096
+
+# 2. Скопировать .env.example и заполнить значения
+cp .env.example .env
+nano .env        # заполнить реальные токены и пароли
+
+# 3. Собрать и задеплоить
+make deploy
+
+# 4. Дождаться запуска
+make status
+
+# 5. Открыть приложение
+make open        # http://localhost:8080
+```
+
+## Конфигурация (.env)
+
+Все секреты передаются через файл `.env`. При `make deploy` скрипт `generate-secrets.sh` автоматически генерирует `k8s/01-secrets.yaml` из `.env`.
+
+```bash
+cp .env.example .env
+```
+
+Заполните значения в `.env`:
+
+| Переменная | Описание | Обязательная |
+|-----------|---------|:---:|
+| `POSTGRES_USER` | Пользователь PostgreSQL | да |
+| `POSTGRES_PASSWORD` | Пароль PostgreSQL | да |
+| `OAUTH2_CLIENT_ID` | OAuth2 client ID | да |
+| `OAUTH2_CLIENT_SECRET` | OAuth2 client secret | да |
+| `ACCESS_KEY` | Ключ доступа (notification) | да |
+| `HH_TOKEN` | Токен HeadHunter API | да |
+| `BOT_USERNAME` | Telegram bot username | нет |
+| `BOT_TOKEN` | Telegram bot token | нет |
+
+> `.env` и `k8s/01-secrets.yaml` добавлены в `.gitignore` — они никогда не попадут в Git.
+
+## Makefile команды
+
+| Команда | Описание |
+|---------|----------|
+| `make deploy` | Сгенерировать секреты + собрать образы + задеплоить |
+| `make build` | Только собрать Docker-образы |
+| `make secrets` | Только сгенерировать `k8s/01-secrets.yaml` из `.env` |
+| `make status` | Показать статус Pod'ов |
+| `make logs s=cd-auth` | Логи конкретного сервиса |
+| `make open` | Открыть приложение (http://localhost:8080) |
+| `make restart` | Перезапустить Pod'ы без пересборки |
+| `make down` | Удалить всё |
+
+## Проверка
+
+```bash
+# Все Pod'ы должны быть Running
+make status
+
+# Логи конкретного сервиса
+make logs s=cd-site
+
+# Eureka Dashboard
+kubectl port-forward service/cd-eureka-svc 9009:9009 -n checkdev
+# http://localhost:9009
+
+# PostgreSQL
+kubectl port-forward service/cd-postgres-svc 5432:5432 -n checkdev
+psql -h localhost -p 5432 -U postgres -d cd_auth
+```
+
+## Структура k8s/
+
+```
+k8s/
+├── 00-namespace.yaml           # Namespace checkdev
+├── 01-secrets.yaml             # ← генерируется из .env (в .gitignore)
+├── 01-secrets.example.yaml     # ← шаблон (в Git)
+├── 02-configmap.yaml           # Конфигурация + init-скрипт БД
+├── 10-postgres.yaml            # PostgreSQL
+├── 11-kafka.yaml               # Kafka (KRaft)
+├── 20-eureka.yaml              # Eureka Server
+├── 30-auth.yaml                # Auth Service
+├── 31-desc.yaml                # Description Service
+├── 32-generator.yaml           # Generator Service
+├── 33-mock.yaml                # Mock Service
+├── 40-site.yaml                # Site (UI)
+└── 41-notification.yaml        # Notification Service
+```
+
+## Остановка
+
+```bash
+make down          # удалить все ресурсы
+minikube stop      # остановить minikube
+```
+
+# Git Flow
 
 Работа ведётся в монорепозитории. Все сервисы версионируются вместе.
 

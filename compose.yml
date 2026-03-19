@@ -73,6 +73,7 @@ services:
 
   eureka:
     build: services/cd_eureka
+    image: checkdev/cd_eureka:latest
     container_name: cd_eureka
     ports:
       - "9009:9009"
@@ -84,6 +85,7 @@ services:
 
   auth:
     build: services/cd_auth
+    image: checkdev/cd_auth:latest
     container_name: cd_auth
     ports:
       - "9900:9900"
@@ -110,6 +112,7 @@ services:
 
   desc:
     build: services/cd_desc
+    image: checkdev/cd_desc:latest
     container_name: cd_desc
     ports:
       - "9902:9902"
@@ -136,6 +139,7 @@ services:
 
   generator:
     build: services/cd_generator
+    image: checkdev/cd_generator:latest
     container_name: cd_generator
     depends_on:
       postgres:
@@ -161,6 +165,7 @@ services:
 
   mock:
     build: services/cd_mock
+    image: checkdev/cd_mock:latest
     container_name: cd_mock
     depends_on:
       postgres:
@@ -185,6 +190,7 @@ services:
 
   site:
     build: services/cd_site
+    image: checkdev/cd_site:latest
     container_name: cd_site
     ports:
       - "8080:8080"
@@ -212,6 +218,7 @@ services:
 
   notification:
     build: services/cd_notification
+    image: checkdev/cd_notification:latest
     container_name: cd_notification
     depends_on:
       postgres:

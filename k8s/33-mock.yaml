@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cd-mock-dpl
+  namespace: checkdev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cd-mock
+  template:
+    metadata:
+      labels:
+        app: cd-mock
+    spec:
+      containers:
+        - name: cd-mock
+          image: checkdev/cd_mock:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9912
+          envFrom:
+            - configMapRef:
+                name: cd-app-config
+            - secretRef:
+                name: cd-db-credentials
+            - secretRef:
+                name: cd-app-credentials
+          env:
+            - name: SERVER_PORT
+              value: "9912"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://cd-postgres-svc:5432/cd_mock"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9912
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9912
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cd-mock-svc
+  namespace: checkdev
+spec:
+  selector:
+    app: cd-mock
+  ports:
+    - port: 9912
+      targetPort: 9912

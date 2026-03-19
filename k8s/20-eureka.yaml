@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cd-eureka-dpl
+  namespace: checkdev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cd-eureka
+  template:
+    metadata:
+      labels:
+        app: cd-eureka
+    spec:
+      containers:
+        - name: cd-eureka
+          image: checkdev/cd_eureka:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9009
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9009
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9009
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cd-eureka-svc
+  namespace: checkdev
+spec:
+  selector:
+    app: cd-eureka
+  ports:
+    - port: 9009
+      targetPort: 9009

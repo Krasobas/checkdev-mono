@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cd-site-dpl
+  namespace: checkdev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cd-site
+  template:
+    metadata:
+      labels:
+        app: cd-site
+    spec:
+      containers:
+        - name: cd-site
+          image: checkdev/cd_site:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: cd-app-config
+          env:
+            - name: SERVER_PORT
+              value: "8080"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cd-site-svc
+  namespace: checkdev
+spec:
+  type: NodePort
+  selector:
+    app: cd-site
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080

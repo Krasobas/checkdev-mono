@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cd-postgres-pvc
+  namespace: checkdev
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cd-postgres-dpl
+  namespace: checkdev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cd-postgres
+  template:
+    metadata:
+      labels:
+        app: cd-postgres
+    spec:
+      containers:
+        - name: cd-postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: [ "pg_isready", "-U", "postgres" ]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: [ "pg_isready", "-U", "postgres" ]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          envFrom:
+            - secretRef:
+                name: cd-db-credentials
+            - configMapRef:
+                name: cd-postgres-config
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: init-script
+              mountPath: /docker-entrypoint-initdb.d
+            - name: pg-data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: init-script
+          configMap:
+            name: cd-postgres-init
+        - name: pg-data
+          persistentVolumeClaim:
+            claimName: cd-postgres-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cd-postgres-svc
+  namespace: checkdev
+spec:
+  type: ClusterIP
+  selector:
+    app: cd-postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

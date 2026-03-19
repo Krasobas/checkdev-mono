@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cd-notification-dpl
+  namespace: checkdev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cd-notification
+  template:
+    metadata:
+      labels:
+        app: cd-notification
+    spec:
+      containers:
+        - name: cd-notification
+          image: checkdev/cd_notification:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9920
+          envFrom:
+            - configMapRef:
+                name: cd-app-config
+            - secretRef:
+                name: cd-db-credentials
+            - secretRef:
+                name: cd-app-credentials
+          env:
+            - name: SERVER_PORT
+              value: "9920"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://cd-postgres-svc:5432/cd_notification"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9920
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9920
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cd-notification-svc
+  namespace: checkdev
+spec:
+  selector:
+    app: cd-notification
+  ports:
+    - port: 9920
+      targetPort: 9920

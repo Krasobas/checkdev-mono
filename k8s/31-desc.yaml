@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cd-desc-dpl
+  namespace: checkdev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cd-desc
+  template:
+    metadata:
+      labels:
+        app: cd-desc
+    spec:
+      containers:
+        - name: cd-desc
+          image: checkdev/cd_desc:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9902
+          envFrom:
+            - configMapRef:
+                name: cd-app-config
+            - secretRef:
+                name: cd-db-credentials
+            - secretRef:
+                name: cd-app-credentials
+          env:
+            - name: SERVER_PORT
+              value: "9902"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://cd-postgres-svc:5432/cd_desc"
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9902
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 9902
+            initialDelaySeconds: 60
+            periodSeconds: 30
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cd-desc-svc
+  namespace: checkdev
+spec:
+  selector:
+    app: cd-desc
+  ports:
+    - port: 9902
+      targetPort: 9902
